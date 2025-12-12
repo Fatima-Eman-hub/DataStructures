@@ -1,31 +1,468 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication2", "ConsoleApplication2.vcxproj", "{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Debug|x64.ActiveCfg = Debug|x64
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Debug|x64.Build.0 = Debug|x64
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Debug|x86.ActiveCfg = Debug|Win32
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Debug|x86.Build.0 = Debug|Win32
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Release|x64.ActiveCfg = Release|x64
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Release|x64.Build.0 = Release|x64
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Release|x86.ActiveCfg = Release|Win32
-		{0D9BB511-6330-4C85-BB85-4BE85CDB6C5F}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {9403F616-D1FA-4A1E-9F2F-AA0796D9BB00}
-	EndGlobalSection
-EndGlobal
+//              TEMPLATES
+//      1. SINGLY LINKED LIST
+//      2. QUEUE USING LINKED LIST
+//      3. STACK USING LINKED LIST
+
+
+//1. SINGLY LINKED LIST
+#include<iostream>
+using namespace std;
+
+// Node template
+template <typename T>
+class Node {
+    T data;
+    Node<T>* next;
+public:
+    Node(T val) : data(val), next(nullptr) {}
+    friend class List<T>;
+    friend class ListQueue<T>;
+    friend class StackSingleLL<T>;
+};
+
+// Singly Linked List template
+template <typename T>
+class List {
+    Node<T>* head;
+    Node<T>* tail;
+public:
+    SinglyLL() {
+        head = nullptr;
+        tail = nullptr;
+    }
+
+    void pushFront(T value) {
+        Node<T>* newNode = new Node<T>(value);
+        if (head == nullptr) {
+            head = tail = newNode;
+        }
+        else {
+            newNode->next = head;
+            head = newNode;
+        }
+    }
+
+    void pushback(T value) {
+        Node<T>* newNode = new Node<T>(value);
+        if (head == nullptr) {
+            head = tail = newNode;
+        }
+        else {
+            tail->next = newNode;
+            tail = newNode;
+        }
+    }
+
+    void popFront() {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+        Node<T>* temp = head;
+        head = temp->next;
+        temp->next = nullptr;
+        delete temp;
+        if (head == nullptr) {
+            tail = nullptr; // Handle case where list becomes empty
+        }
+    }
+
+    void popBack() {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+        if (head == tail) { // Only one element
+            delete head;
+            head = tail = nullptr;
+            return;
+        }
+
+        Node<T>* temp = head;
+        while (temp->next != tail) {
+            temp = temp->next;
+        }
+        delete tail;
+        tail = temp;
+        temp->next = nullptr;
+    }
+
+    void pushMiddle(int pos, T value) {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            pushFront(value);
+            return;
+        }
+        if (pos <= 0) { 
+            pushFront(value);
+            return;
+        }
+
+        Node<T>* newNode = new Node<T>(value);
+        Node<T>* temp = head;
+        for (int i = 0; i < pos - 1 && temp != nullptr; i++) {
+            temp = temp->next;
+        }
+
+        if (temp == nullptr) {
+            cout << "Position out of range." << endl;
+            delete newNode;
+            return;
+        }
+
+        newNode->next = temp->next;
+        temp->next = newNode;
+        if (newNode->next == nullptr) { // Check if we inserted at the end
+            tail = newNode;
+        }
+    }
+
+    // NOTE: For popMiddlebyValue, the original code compares `data` which assumes T supports `==`.
+    void popMiddlebyValue(T value) {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+        if (head->data == value) {
+            popFront();
+            return;
+        }
+
+        Node<T>* temp = head;
+        while (temp->next != nullptr && temp->next->data != value) {
+            temp = temp->next;
+        }
+
+        if (temp->next == nullptr) {
+            cout << "Value not found in the list." << endl;
+            return;
+        }
+
+        Node<T>* deleteNode = temp->next;
+        temp->next = temp->next->next;
+        if (deleteNode == tail) {
+            tail = temp; // Update tail if the last element was deleted
+        }
+        delete deleteNode;
+    }
+
+    void popMiddlebyPosition(int pos) {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+        if (pos == 0) {
+            popFront();
+            return;
+        }
+
+        Node<T>* temp = head;
+        int currentPos = 0;
+        while (temp != nullptr && currentPos < pos - 1) {
+            temp = temp->next;
+            currentPos++;
+        }
+
+        if (temp == nullptr || temp->next == nullptr) {
+            cout << "Position out of range." << endl;
+            return;
+        }
+
+        Node<T>* deleteNode = temp->next;
+        temp->next = temp->next->next;
+        if (deleteNode == tail) {
+            tail = temp; // Update tail if the last element was deleted
+        }
+        delete deleteNode;
+    }
+
+    // NOTE: For deleteAllOccurrences, it assumes T supports `==` and can be printed.
+    void deleteAllOccurrences(T value) {
+        if (head == nullptr) {
+            cout << "List is empty." << endl;
+            return;
+        }
+
+        while (head != nullptr && head->data == value) {
+            Node<T>* temp = head;
+            head = head->next;
+            delete temp;
+        }
+
+        if (head == nullptr) {
+            cout << "All occurrences deleted (list became empty)." << endl;
+            tail = nullptr;
+            return;
+        }
+
+        Node<T>* temp = head;
+        while (temp->next != nullptr) {
+            if (temp->next->data == value) {
+                Node<T>* delNode = temp->next;
+                temp->next = temp->next->next;
+                if (delNode == tail) {
+                    tail = temp; // Update tail if the last element was deleted
+                }
+                delete delNode;
+            }
+            else {
+                temp = temp->next;
+            }
+        }
+    }
+
+    // NOTE: search assumes T supports `==`.
+    int search(T key) {
+        Node<T>* temp = head;
+        int idx = 0;
+        while (temp != nullptr) {
+            if (temp->data == key) {
+                return idx;
+            }
+            temp = temp->next;
+            idx++;
+        }
+        return -1; // Return -1 if not found (original code returned idx, which could be misleading)
+    }
+
+    // NOTE: display assumes T supports output stream `<<`.
+    void display() const {
+        Node<T>* temp = head;
+        while (temp != nullptr) {
+            cout << temp->data << " ->";
+            temp = temp->next;
+        }
+        cout << "NULL" << endl;
+    }
+
+    // NOTE: maxFind assumes T supports `>` and can be printed.
+    void maxFind() const {
+        if (head == nullptr) {
+            cout << "List is empty.\n";
+            return;
+        }
+        T maxVal = head->data;
+        for (Node<T>* temp = head; temp != nullptr; temp = temp->next)
+            if (temp->data > maxVal)
+                maxVal = temp->data;
+        cout << "Maximum Value: " << maxVal << endl;
+    }
+
+    // NOTE: minFind assumes T supports `<` and can be printed.
+    void minFind() const {
+        if (head == nullptr) {
+            cout << "List is empty.\n";
+            return;
+        }
+        T minVal = head->data;
+        for (Node<T>* temp = head; temp != nullptr; temp = temp->next)
+            if (temp->data < minVal)
+                minVal = temp->data;
+        cout << "Minimum Value: " << minVal << endl;
+    }
+
+    void reverse() {
+        Node<T>* prev = nullptr;
+        Node<T>* curr = head;
+        Node<T>* next = nullptr;
+
+        tail = head; // The original head becomes the new tail
+
+        while (curr != nullptr) {
+            next = curr->next;
+            curr->next = prev;
+            prev = curr;
+            curr = next;
+        }
+        head = prev;
+    }
+
+    // NOTE: sort assumes T supports `>` and `swap`.
+    void sort() {
+        if (head == nullptr || head->next == nullptr)
+            return;
+
+        for (Node<T>* i = head; i != nullptr; i = i->next)
+            for (Node<T>* j = i->next; j != nullptr; j = j->next)
+                if (i->data > j->data)
+                    std::swap(i->data, j->data); // Use std::swap for general types
+    }
+
+    ~SinglyLL() {
+        while (head != nullptr)
+            popFront();
+    }
+};
+/*int main() {
+    List<int> L;
+    L.pushFront(90);
+    L.pushFront(11);
+    L.pushback(7);
+    L.display(); // 11 -> 90 -> 7 -> NULL
+    L.sort();
+    L.display(); // 7 -> 11 -> 90 -> NULL
+    L.maxFind(); // Maximum Value: 90
+    L.minFind(); // Minimum Value: 7
+    return 0;
+}*/
+
+
+//      2. QUEUE USING LINKED LIST
+
+// Queue template using Linked List
+template <typename T>
+class ListQueue {
+    Node<T>* front;
+    Node<T>* back;
+    int size;
+public:
+    ListQueue() : front(nullptr), back(nullptr), size(0) {}
+
+    bool isempty() const {
+        return size == 0;
+    }
+
+    void enqueue(T val) {
+        Node<T>* newNode = new Node<T>(val);
+        if (isempty()) {
+            front = back = newNode;
+        }
+        else {
+            back->next = newNode;
+            back = newNode;
+        }
+        size++;
+    }
+
+    // NOTE: Assumes T can be printed.
+    void dequeue() {
+        if (isempty()) {
+            cout << "\nThe queue is empty can't delete." << endl;
+            return;
+        }
+        Node<T>* temp = front;
+        T val = temp->data;
+        front = front->next;
+        if (front == nullptr) {
+            back = nullptr;
+        }
+        delete temp;
+        size--;
+        cout << "\ndequeue " << val << endl;
+    }
+
+    void getsize() const {
+        cout << "\nThe current size of the queue is: " << size << endl;
+    }
+
+    T getfront() const {
+        if (isempty()) {
+            cout << "The queue is empty." << endl;
+            return T();
+        }
+        return front->data;
+    }
+
+    ~ListQueue() {
+        while (!isempty()) {
+            Node<T>* temp = front;
+            front = front->next;
+            delete temp;
+            size--;
+        }
+        front = back = nullptr;
+    }
+};
+
+// Example usage
+/*int main() {
+    ListQueue<string> q;
+    q.enqueue("apple");
+    q.enqueue("banana");
+    cout << "The front is: " << q.getfront() << endl; // apple
+    q.getsize(); // 2
+    q.dequeue(); // dequeue apple
+    cout << "The front is: " << q.getfront() << endl; // banana
+    q.getsize(); // 1
+    return 0;
+}*/
+
+
+//      3. STACK USING LINKED LIST
+
+
+// Stack template using Singly Linked List
+template <typename T>
+class StackSingleLL {
+    Node<T>* top;
+public:
+    StackSingleLL() {
+        top = nullptr;
+    }
+    void push(T value) {
+        Node<T>* newNode = new Node<T>(value);
+        newNode->next = top;
+        top = newNode;
+        cout << "Pushed: " << value << endl;
+    }
+    void pop() {
+        if (isEmpty()) {
+            cout << "Stack is empty, can't pop!" << endl;
+            return;
+        }
+        Node<T>* temp = top;
+        cout << "Popped: " << temp->data << endl;
+        top = top->next;
+        delete temp;
+    }
+    T peek() const {
+        if (isEmpty()) {
+            cout << "Stack is empty!" << endl;
+            return T();
+        }
+        return top->data;
+    }
+
+    bool isEmpty() const {
+        return top == nullptr;
+    }
+
+    void display() const {
+        if (isEmpty()) {
+            cout << "Stack is empty!" << endl;
+            return;
+        }
+        cout << "Stack (top -> bottom): " << endl;
+        for (Node<T>* temp = top; temp != nullptr; temp = temp->next) {
+            cout << temp->data << " -> ";
+        }
+        cout << "null" << endl;
+    }
+
+    ~StackSingleLL() {
+        while (!isEmpty()) {
+            Node<T>* temp = top;
+            top = top->next;
+            delete temp;
+        }
+    }
+};
+
+/*int main() {
+    StackSingleLL<char> s;
+    s.push('A');
+    s.push('B');
+    s.push('C');
+    s.display();
+    // Stack (top -> bottom):
+    // C -> B -> A -> null
+
+    cout << "Top element: " << s.peek() << endl; // Top element: C
+
+    s.pop(); // Popped: C
+    s.display();
+    // Stack (top -> bottom):
+    // B -> A -> null
+
+    return 0;
+}*/
