@@ -1,31 +1,334 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36429.23 d17.14
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication4", "ConsoleApplication4.vcxproj", "{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Debug|x64.ActiveCfg = Debug|x64
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Debug|x64.Build.0 = Debug|x64
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Debug|x86.ActiveCfg = Debug|Win32
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Debug|x86.Build.0 = Debug|Win32
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Release|x64.ActiveCfg = Release|x64
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Release|x64.Build.0 = Release|x64
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Release|x86.ActiveCfg = Release|Win32
-		{BB51B57E-5098-4EDF-8EB5-66F77DE4E679}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {8F48A096-69A6-4A0C-9106-CE9E9B77C5FE}
-	EndGlobalSection
-EndGlobal
+
+//QUEUE :  FIFO(FIRST IN FIRST OUT)
+//front se pop , rear/back se push and vice versa
+
+//deque: double ended queue
+
+#include<iostream>
+using namespace std;
+
+//Using Circular Array
+//Circular QUEUE: willl use array
+// (r+1) % capacity = (2+1)%3 = 0 =  0,1,2
+/*class QueueArray {
+	int* arr;
+	int capacity;
+	int sz;
+	int ifront;
+	int iback;
+public:
+	QueueArray(int n) {
+		capacity = n;
+		arr = new int[capacity];
+		sz = 0;
+		ifront = 0;
+		iback = -1;
+	}
+	bool isempty() {
+		if (sz == 0) {
+			return true;
+		}
+		return false;
+	}
+	bool isfull() {
+		if (sz == capacity) {
+			return true;
+		}
+		return false;
+	}
+	void enqueue(int val) {
+		if (isfull()) {
+			cout << "Can't add more, queue is full." << endl;
+			return;
+		}
+		iback = (iback + 1) % capacity;
+		arr[iback] = val;
+		sz++;
+		cout << "Enqueued: " << arr[iback] << endl;
+	}
+	void dequeue() {
+		if (isempty()) {
+			cout << "Can't delete, queue is empty." << endl;
+			return;
+		}
+		int temp = arr[ifront];
+		ifront = (ifront + 1) % capacity;
+		sz--;
+		cout << "Dequeued: " << temp << endl;
+	}
+	int getfront() {
+		if (isempty()) {
+			cout << "No front, queue is empty." << endl;
+			return 0;
+		}
+		return arr[ifront];
+	}
+	int getsize() {
+		return sz;
+	}
+	void display() {
+		if (isempty()) {
+			cout << "No display, queue is empty." << endl;
+			return;
+		}
+		int count = sz;
+		int i = ifront;
+		while (count--) {
+			cout << arr[i] << " ";
+			i = (i + 1) % capacity;
+		}
+		cout << endl;
+	}
+};
+int main() {
+	QueueArray q(4);
+	q.enqueue(1);
+	q.enqueue(2);
+	q.enqueue(3);
+	q.enqueue(4);
+	cout << "\nSize of the queue is: " << q.getsize() << endl;
+	q.enqueue(5);
+	cout << "\Front of the queue is: " << q.getfront() << endl;
+	q.dequeue();
+	q.dequeue();
+	q.dequeue();
+	cout << "\nSize of the queue is: " << q.getsize() << endl;
+	cout << "\Front of the queue is: " << q.getfront() << endl;
+	q.enqueue(5);
+	cout << "\nQueue is:" << endl;
+	q.display();
+
+	return 0;
+}*/
+
+//Using linked list
+/*class Node {
+	Node* next;
+	int data;
+public:
+	Node(int val):data(val),next(nullptr){}
+	friend class QueueLL;
+};
+
+class QueueLL {
+	Node* head;
+	Node* tail;
+	int sz;
+public:
+	QueueLL() {
+		head = tail = nullptr;
+		sz = 0;
+	}
+	bool isempty() {
+		return sz == 0;
+	}
+	void enqueue(int val) {
+		Node* newNode = new Node(val);
+		if (isempty()) {
+			head = tail = newNode;
+		}
+		tail->next = newNode;
+		tail = newNode;
+		sz++;
+		cout << "Enqueued: " << val << endl;
+	}
+	void dequeue() {
+		if (isempty()) {
+			cout << "\nqueue underflow." << endl;
+		}
+		Node* temp = head;
+		int value = temp->data;
+
+		head = head->next;
+		delete temp;
+		sz--;
+		cout << "Dequeued: " << value << endl;
+	}
+	int front() {
+		if (isempty()) {
+			throw runtime_error("queue underflow.");
+		}
+		return head->data;
+	}
+	int getsize() {
+		return sz;
+	}
+};
+int main() {
+	QueueLL q;
+	q.enqueue(1);
+	q.enqueue(2);
+	q.enqueue(3);
+	q.enqueue(4);
+	q.enqueue(5);
+	cout << "\nFront of the queue is: " << q.front() << endl;
+	cout << "\nSize of the queue is: " << q.getsize() << endl;
+	q.dequeue();
+	q.dequeue();
+	q.dequeue();
+	q.dequeue();
+	cout << "\nSize of the queue is: " << q.getsize() << endl;
+	q.dequeue();
+	cout << "\nSize of the queue is: " << q.getsize() << endl;
+	
+	return 0;
+}*/
+
+//			DEQUE :		Double Ended Queue
+//It allows insertion and deletion at BOTH ends
+ 
+// From the slides using library
+
+/*#include <deque>
+
+int main() {
+	deque<int> dq;
+
+	dq.push_front(5);
+	dq.push_back(4);
+	dq.push_front(3);
+	dq.push_back(6);  // deque = 3 5 4 6
+
+	cout << "Empty? " << dq.empty() << endl;
+	cout << "Size: " << dq.size() << endl;
+
+	while (!dq.empty()) {
+		cout << "Back: " << dq.back() << endl;
+		dq.pop_back();
+	}
+
+	cout << "Empty? " << dq.empty() << endl;
+
+	return 0;
+}
+*/
+
+//DEQUE using DOUBLY LINKED LIST
+
+/*template <typename T>
+class Node {
+public:
+	T data;
+	Node<T>* prev;
+	Node<T>* next;
+
+	Node(T val) : data(val), prev(nullptr), next(nullptr) {}
+};
+template <typename T>
+class Deque {
+private:
+	Node<T>* frontPtr;
+	Node<T>* backPtr;
+	int sz;
+
+public:
+	Deque() : frontPtr(nullptr), backPtr(nullptr), sz(0) {}
+
+	bool empty() const {
+		return sz == 0;
+	}
+
+	int size() const {
+		return sz;
+	}
+	void push_front(T val) {
+		Node<T>* newNode = new Node<T>(val);
+
+		if (empty()) {
+			frontPtr = backPtr = newNode;
+		}
+		else {
+			newNode->next = frontPtr;
+			frontPtr->prev = newNode;
+			frontPtr = newNode;
+		}
+		sz++;
+	}
+	void push_back(T val) {
+		Node<T>* newNode = new Node<T>(val);
+
+		if (empty()) {
+			frontPtr = backPtr = newNode;
+		}
+		else {
+			backPtr->next = newNode;
+			newNode->prev = backPtr;
+			backPtr = newNode;
+		}
+		sz++;
+	}
+
+	void pop_front() {
+		if (empty()) {
+			cout << "Deque is empty!\n";
+			return;
+		}
+
+		Node<T>* temp = frontPtr;
+
+		if (frontPtr == backPtr) { // only one element
+			frontPtr = backPtr = nullptr;
+		}
+		else {
+			frontPtr = frontPtr->next;
+			frontPtr->prev = nullptr;
+		}
+		delete temp;
+		sz--;
+	}
+
+	void pop_back() {
+		if (empty()) {
+			cout << "Deque is empty!\n";
+			return;
+		}
+
+		Node<T>* temp = backPtr;
+
+		if (frontPtr == backPtr) { // only one element
+			frontPtr = backPtr = nullptr;
+		}
+		else {
+			backPtr = backPtr->prev;
+			backPtr->next = nullptr;
+		}
+		delete temp;
+		sz--;
+	}
+
+	T front() const {
+		if (empty()) {
+			cout << "Deque is empty!\n";
+			return T();
+		}
+		return frontPtr->data;
+	}
+	T back() const {
+		if (empty()) {
+			cout << "Deque is empty!\n";
+			return T();
+		}
+		return backPtr->data;
+	}
+};
+int main() {
+	Deque<int> dq;
+
+	dq.push_back(10);
+	dq.push_front(20);
+	dq.push_back(30);
+	dq.push_front(40);  // Deque = 40 20 10 30
+
+	cout << "Front: " << dq.front() << endl; // 40
+	cout << "Back: " << dq.back() << endl;   // 30
+	cout << "Size: " << dq.size() << endl;   // 4
+
+	dq.pop_front();  // removes 40
+	dq.pop_back();   // removes 30
+
+	cout << "Front: " << dq.front() << endl; // 20
+	cout << "Back: " << dq.back() << endl;   // 10
+	cout << "Size: " << dq.size() << endl;   // 2
+}*/
+
+
