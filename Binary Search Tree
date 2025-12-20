@@ -1,0 +1,323 @@
+#include <iostream>
+#include <stdexcept> 
+using namespace std;
+
+
+template <typename Type> 
+class BST;
+
+
+template <typename Type>
+class BSTNode {
+    friend class BST<Type>;
+
+private:
+    Type element;
+    BSTNode* left_tree;
+    BSTNode* right_tree;
+
+public:
+    BSTNode(Type const& e) : element(e), left_tree(nullptr), right_tree(nullptr) {}
+
+    ~BSTNode() {
+        // Left empty intentionally. 
+        // We manually delete children in 'clear()' to have control.
+    }
+
+    // Accessors
+    Type retrieve() const { return element; }
+    BSTNode* left() const { return left_tree; }
+    BSTNode* right() const { return right_tree; }
+
+    // Helper checks
+    bool empty() const { return this == nullptr; }
+    bool is_leaf() const { return left_tree == nullptr && right_tree == nullptr; }
+
+    // Mutators (for manual linking)
+    void set_left(BSTNode* n) { left_tree = n; }
+    void set_right(BSTNode* n) { right_tree = n; }
+
+    // ---------------------------------------------------------
+    // RECURSIVE OPERATIONS (Node Level)
+    // ---------------------------------------------------------
+
+    bool find(Type const& obj) const {
+        if (obj == element) return true;
+        if (obj < element)
+            return (left_tree == nullptr) ? false : left_tree->find(obj);
+        else
+            return (right_tree == nullptr) ? false : right_tree->find(obj);
+    }
+
+    bool insert(Type const& obj, BSTNode*& ptr_to_this) {
+        if (obj < element) {
+            if (left_tree == nullptr) {
+                left_tree = new BSTNode(obj);
+                return true;
+            }
+            else {
+                return left_tree->insert(obj, left_tree);
+            }
+        }
+        else if (obj > element) {
+            if (right_tree == nullptr) {
+                right_tree = new BSTNode(obj);
+                return true;
+            }
+            else {
+                return right_tree->insert(obj, right_tree);
+            }
+        }
+        return false; // Duplicate
+    }
+
+    Type front() const {
+        return (left_tree == nullptr) ? element : left_tree->front();
+    }
+
+    Type back() const {
+        return (right_tree == nullptr) ? element : right_tree->back();
+    }
+
+    // Recursive Erase 
+    bool erase(Type const& obj, BSTNode*& ptr_to_this) {
+        if (obj < element) {
+            if (left_tree == nullptr) return false;
+            return left_tree->erase(obj, left_tree);
+        }
+        else if (obj > element) {
+            if (right_tree == nullptr) return false;
+            return right_tree->erase(obj, right_tree);
+        }
+        else {
+            // Found the node to delete
+            if (is_leaf()) {
+                delete this;
+                ptr_to_this = nullptr;
+            }
+            else if (left_tree != nullptr && right_tree != nullptr) {
+                // Two children: Swap with smallest in right subtree 
+                element = right_tree->front();
+                right_tree->erase(element, right_tree);
+            }
+            else {
+                // One child
+                BSTNode* child = (left_tree != nullptr) ? left_tree : right_tree;
+                ptr_to_this = child; // Link parent to child (bypass 'this')
+                left_tree = right_tree = nullptr; // Detach to prevent accidental deletion
+                delete this;
+            }
+            return true;
+        }
+    }
+
+    void clear() {
+        if (left_tree != nullptr) {
+            left_tree->clear();
+            delete left_tree;
+            left_tree = nullptr;
+        }
+        if (right_tree != nullptr) {
+            right_tree->clear();
+            delete right_tree;
+            right_tree = nullptr;
+        }
+    }
+};
+
+
+template <typename Type>
+class BST {
+private:
+    BSTNode<Type>* root_node;
+
+public:
+    BST() : root_node(nullptr) {}
+
+    ~BST() {
+        clear();
+    }
+
+    void clear() {
+        if (root_node != nullptr) {
+            root_node->clear();
+            delete root_node;
+            root_node = nullptr;
+        }
+    }
+
+    bool empty() const { return root_node == nullptr; }
+
+    // ---------------------
+    // ITERATIVE OPERATIONS 
+    // ---------------------
+
+    bool searchIterative(Type const& obj) const {
+        BSTNode<Type>* current = root_node;
+        while (current != nullptr) {
+            if (obj == current->retrieve()) {
+                return true;
+            }
+            else if (obj < current->retrieve()) {
+                current = current->left();
+            }
+            else {
+                current = current->right();
+            }
+        }
+        return false;
+    }
+
+    bool insertIterative(Type const& obj) {
+        if (root_node == nullptr) {
+            root_node = new BSTNode<Type>(obj);
+            return true;
+        }
+
+        BSTNode<Type>* current = root_node;
+        BSTNode<Type>* parent = nullptr;
+
+        while (current != nullptr) {
+            parent = current;
+            if (obj < current->retrieve()) {
+                current = current->left();
+            }
+            else if (obj > current->retrieve()) {
+                current = current->right();
+            }
+            else {
+                return false; // Duplicate
+            }
+        }
+
+        // Parent is now the leaf node to attach to 
+        if (obj < parent->retrieve())
+            parent->set_left(new BSTNode<Type>(obj));
+        else
+            parent->set_right(new BSTNode<Type>(obj));
+
+        return true;
+    }
+
+    Type minIterative() const {
+        if (root_node == nullptr) throw std::underflow_error("Tree is empty");
+        BSTNode<Type>* current = root_node;
+        while (current->left() != nullptr) {
+            current = current->left();
+        }
+        return current->retrieve();
+    }
+
+    Type maxIterative() const {
+        if (root_node == nullptr) throw std::underflow_error("Tree is empty");
+        BSTNode<Type>* current = root_node;
+        while (current->right() != nullptr) {
+            current = current->right();
+        }
+        return current->retrieve();
+    }
+
+    // Finds the next larger value (Successor)
+    Type next_larger(Type const& obj) const {
+        BSTNode<Type>* current = root_node;
+        BSTNode<Type>* successor = nullptr;
+
+        while (current != nullptr) {
+            if (obj < current->retrieve()) {
+                successor = current; // Possible candidate
+                current = current->left();
+            }
+            else {
+                current = current->right();
+            }
+        }
+
+        if (successor == nullptr) throw std::overflow_error("No successor found");
+        return successor->retrieve();
+    }
+
+    // -------------------
+    // RECURSIVE WRAPPERS 
+    // -------------------
+
+    bool insertRecursive(Type const& obj) {
+        if (root_node == nullptr) {
+            root_node = new BSTNode<Type>(obj);
+            return true;
+        }
+        return root_node->insert(obj, root_node);
+    }
+
+    bool erase(Type const& obj) {
+        if (root_node == nullptr) {
+            return false;
+        }
+        return root_node->erase(obj, root_node);
+    }
+
+    bool searchRecursive(Type const& obj) const {
+        return (root_node == nullptr) ? false : root_node->find(obj);
+    }
+
+    void printInOrder() const {
+        printInOrderHelper(root_node);
+        cout << endl;
+    }
+
+private:
+    void printInOrderHelper(BSTNode<Type>* node) const {
+        if (node != nullptr) {
+            printInOrderHelper(node->left());
+            cout << node->retrieve() << " ";
+            printInOrderHelper(node->right());
+        }
+    }
+};
+
+int main() {
+    BST<int> bst;
+
+    cout << "--- Testing Insertion (Mix of Iterative and Recursive) ---" << endl;
+    bst.insertIterative(50); // Root
+    bst.insertIterative(30); // Left
+    bst.insertRecursive(70); // Right (Recursive wrapper)
+    bst.insertIterative(20);
+    bst.insertIterative(40);
+    bst.insertIterative(60);
+    bst.insertIterative(80);
+
+    cout << "Tree Content (In-Order): ";
+    bst.printInOrder(); // Should be 20 30 40 50 60 70 80
+
+    cout << "\n--- Testing Search ---" << endl;
+    cout << "Search 40 (Iterative): " << (bst.searchIterative(40) ? "Found" : "Not Found") << endl;
+    cout << "Search 90 (Recursive): " << (bst.searchRecursive(90) ? "Found" : "Not Found") << endl;
+
+    cout << "\n--- Testing Min/Max (Iterative) ---" << endl;
+    cout << "Min: " << bst.minIterative() << endl;
+    cout << "Max: " << bst.maxIterative() << endl;
+
+    cout << "\n--- Testing Successor (Next Larger) ---" << endl;
+    try {
+        cout << "Successor of 40 is: " << bst.next_larger(40) << " (Expected 50)" << endl;
+        cout << "Successor of 60 is: " << bst.next_larger(60) << " (Expected 70)" << endl;
+    }
+    catch (exception& e) {
+        cout << e.what() << endl;
+    }
+
+    cout << "\n--- Testing Erase (Recursive Logic) ---" << endl;
+    cout << "Deleting 20 (Leaf)..." << endl;
+    bst.erase(20);
+    bst.printInOrder();
+
+    cout << "Deleting 30 (One child 40)..." << endl;
+    bst.erase(30);
+    bst.printInOrder();
+
+    cout << "Deleting 50 (Root - Two children)..." << endl;
+    bst.erase(50);
+    bst.printInOrder();
+
+    return 0;
+}
