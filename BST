@@ -1,0 +1,518 @@
+#include <iostream>
+#include <algorithm>
+#include <stdexcept>
+
+using namespace std;
+
+// Define UNDERFLOW exception
+#define UNDERFLOW "Tree is empty"
+
+// ===================== BINARY SEARCH NODE CLASS =====================
+template <typename Type>
+class Binary_search_node
+{
+protected:
+    Type element;
+    Binary_search_node* left_tree;
+    Binary_search_node* right_tree;
+
+public:
+    // Constructor
+    Binary_search_node(Type const& obj = Type()) : element(obj), left_tree(nullptr), right_tree(nullptr) {}
+    
+    // Accessors and mutators
+    void setdata(Type obj) { element = obj; }
+    Type retrieve() const { return element; }
+    
+    Binary_search_node* left() const { return left_tree; }
+    void setleft(Binary_search_node<Type>* obj) { left_tree = obj; }
+    
+    Binary_search_node* right() const { return right_tree; }
+    void setright(Binary_search_node<Type>* obj) { right_tree = obj; }
+    
+    // Node operations
+    bool empty() const;
+    bool is_leaf() const;
+    int size() const;
+    int height() const;
+    Type front() const; // find min
+    Type back() const;  // find max
+    void clear();
+    bool insert(Type const& obj, Binary_search_node<Type>* &ptr_to_this);
+    bool erase(Type const& obj, Binary_search_node<Type>* &ptr_to_this);
+    bool find(Type const& obj) const;
+};
+
+// ===================== NODE IMPLEMENTATION =====================
+
+// Check if node is empty
+template <typename Type>
+bool Binary_search_node<Type>::empty() const
+{
+    return (this == nullptr);
+}
+
+// Check if node is leaf
+template <typename Type>
+bool Binary_search_node<Type>::is_leaf() const
+{
+    return (left_tree == nullptr && right_tree == nullptr);
+}
+
+// Calculate size of subtree
+template <typename Type>
+int Binary_search_node<Type>::size() const
+{
+    if (empty()) return 0;
+    int left_size = (left_tree) ? left_tree->size() : 0;
+    int right_size = (right_tree) ? right_tree->size() : 0;
+    return 1 + left_size + right_size;
+}
+
+// Calculate height of subtree
+template <typename Type>
+int Binary_search_node<Type>::height() const
+{
+    if (empty()) return -1;
+    int left_height = (left_tree) ? left_tree->height() : -1;
+    int right_height = (right_tree) ? right_tree->height() : -1;
+    return 1 + max(left_height, right_height);
+}
+
+// Find minimum (front)
+template <typename Type>
+Type Binary_search_node<Type>::front() const {
+    if (empty()) {
+        throw underflow_error(UNDERFLOW);
+    }
+    if (left_tree == nullptr) {
+        return element;
+    }
+    return left_tree->front();
+}
+
+// Find maximum (back)
+template <typename Type>
+Type Binary_search_node<Type>::back() const {
+    if (empty()) {
+        throw underflow_error(UNDERFLOW);
+    }
+    if (right_tree == nullptr) {
+        return element;
+    }
+    return right_tree->back();
+}
+
+// Clear subtree
+template <typename Type>
+void Binary_search_node<Type>::clear() {
+    if (left_tree) {
+        left_tree->clear();
+        delete left_tree;
+        left_tree = nullptr;
+    }
+    if (right_tree) {
+        right_tree->clear();
+        delete right_tree;
+        right_tree = nullptr;
+    }
+}
+
+// Find element in subtree
+template <typename Type>
+bool Binary_search_node<Type>::find(Type const& obj) const {
+    if (empty()) {
+        return false;
+    }
+    if (element == obj) {
+        return true;
+    }
+    if (obj < element) {
+        return (left_tree) ? left_tree->find(obj) : false;
+    }
+    return (right_tree) ? right_tree->find(obj) : false;
+}
+
+// Insert element into subtree (recursive)
+template <typename Type>
+bool Binary_search_node<Type>::insert(Type const& obj, Binary_search_node<Type>* &ptr_to_this) {
+    if (empty()) {
+        ptr_to_this = new Binary_search_node<Type>(obj);
+        return true;
+    }
+    else if (obj < element) {
+        if (!left_tree) {
+            left_tree = new Binary_search_node<Type>(obj);
+            return true;
+        }
+        return left_tree->insert(obj, left_tree);
+    }
+    else if (obj > element) {
+        if (!right_tree) {
+            right_tree = new Binary_search_node<Type>(obj);
+            return true;
+        }
+        return right_tree->insert(obj, right_tree);
+    }
+    else {
+        return false; // Duplicate
+    }
+}
+
+// Erase element from subtree (recursive)
+template <typename Type>
+bool Binary_search_node<Type>::erase(Type const& obj, Binary_search_node<Type>* &ptr_to_this) {
+    if (empty()) {
+        return false;
+    }
+    
+    if (obj < element) {
+        if (!left_tree) return false;
+        return left_tree->erase(obj, left_tree);
+    }
+    else if (obj > element) {
+        if (!right_tree) return false;
+        return right_tree->erase(obj, right_tree);
+    }
+    else { // Found the node to delete
+        // Case 1: Leaf node
+        if (is_leaf()) {
+            delete this;
+            ptr_to_this = nullptr;
+            return true;
+        }
+        // Case 2: Node with one child
+        else if (left_tree == nullptr) {
+            Binary_search_node* temp = right_tree;
+            delete this;
+            ptr_to_this = temp;
+            return true;
+        }
+        else if (right_tree == nullptr) {
+            Binary_search_node* temp = left_tree;
+            delete this;
+            ptr_to_this = temp;
+            return true;
+        }
+        // Case 3: Node with two children
+        else {
+            // Find minimum in right subtree
+            Type min_val = right_tree->front();
+            element = min_val;
+            // Delete the minimum from right subtree
+            return right_tree->erase(min_val, right_tree);
+        }
+    }
+}
+
+// ===================== BINARY SEARCH TREE CLASS =====================
+template <typename Type>
+class Binary_Search_tree
+{
+protected:
+    Binary_search_node<Type>* root_node;
+
+public:
+    // Constructors and destructor
+    Binary_Search_tree();
+    Binary_Search_tree(Type const& obj);
+    ~Binary_Search_tree();
+    
+    // Accessors
+    Binary_search_node<Type>* root() const;
+    bool empty() const;
+    int size() const;
+    int height() const;
+    Type front() const; // find min
+    Type back() const;  // find max
+    
+    // Operations
+    void clear();
+    bool insert(Type const& obj);
+    void insertiter(Type const& obj);
+    bool erase(Type const& obj);
+    bool find(Type const& obj) const;
+    Binary_search_node<Type>* search(Type obj) const;
+    
+    // Traversals
+    void inorder() const;
+    void preorder() const;
+    void postorder() const;
+    
+private:
+    // Helper methods for traversals
+    void inorder_helper(Binary_search_node<Type>* node) const;
+    void preorder_helper(Binary_search_node<Type>* node) const;
+    void postorder_helper(Binary_search_node<Type>* node) const;
+};
+
+// ===================== TREE IMPLEMENTATION =====================
+
+// Constructor
+template <typename Type>
+Binary_Search_tree<Type>::Binary_Search_tree() : root_node(nullptr) {}
+
+// Constructor with initial value
+template <typename Type>
+Binary_Search_tree<Type>::Binary_Search_tree(Type const& obj) : root_node(new Binary_search_node<Type>(obj)) {}
+
+// Destructor
+template <typename Type>
+Binary_Search_tree<Type>::~Binary_Search_tree() {
+    clear();
+}
+
+// Clear the tree
+template <typename Type>
+void Binary_Search_tree<Type>::clear() {
+    if (root_node) {
+        root_node->clear();
+        delete root_node;
+        root_node = nullptr;
+    }
+}
+
+// Get root node
+template <typename Type>
+Binary_search_node<Type>* Binary_Search_tree<Type>::root() const {
+    return root_node;
+}
+
+// Check if tree is empty
+template <typename Type>
+bool Binary_Search_tree<Type>::empty() const {
+    return (root_node == nullptr);
+}
+
+// Get tree size
+template <typename Type>
+int Binary_Search_tree<Type>::size() const {
+    return (root_node) ? root_node->size() : 0;
+}
+
+// Get tree height
+template <typename Type>
+int Binary_Search_tree<Type>::height() const {
+    return (root_node) ? root_node->height() : -1;
+}
+
+// Find minimum (front) - recursive
+template <typename Type>
+Type Binary_Search_tree<Type>::front() const {
+    if (!root_node) {
+        throw underflow_error(UNDERFLOW);
+    }
+    return root_node->front();
+}
+
+// Find maximum (back) - recursive
+template <typename Type>
+Type Binary_Search_tree<Type>::back() const {
+    if (!root_node) {
+        throw underflow_error(UNDERFLOW);
+    }
+    return root_node->back();
+}
+
+// Find minimum - iterative
+template <typename Type>
+Binary_search_node<Type>* minimum(Binary_search_node<Type>* n) {
+    if (!n) return nullptr;
+    while (n->left() != nullptr) {
+        n = n->left();
+    }
+    return n;
+}
+
+// Find maximum - iterative
+template <typename Type>
+Binary_search_node<Type>* maximum(Binary_search_node<Type>* n) {
+    if (!n) return nullptr;
+    while (n->right() != nullptr) {
+        n = n->right();
+    }
+    return n;
+}
+
+// Find element in tree
+template <typename Type>
+bool Binary_Search_tree<Type>::find(Type const& obj) const {
+    return (root_node) ? root_node->find(obj) : false;
+}
+
+// Search for element (iterative)
+template <typename Type>
+Binary_search_node<Type>* Binary_Search_tree<Type>::search(Type obj) const {
+    Binary_search_node<Type>* current = root_node;
+    
+    while (current != nullptr) {
+        if (current->retrieve() == obj) {
+            return current;
+        }
+        else if (obj < current->retrieve()) {
+            current = current->left();
+        }
+        else {
+            current = current->right();
+        }
+    }
+    return nullptr;
+}
+
+// Insert element (recursive)
+template <typename Type>
+bool Binary_Search_tree<Type>::insert(Type const& obj) {
+    if (!root_node) {
+        root_node = new Binary_search_node<Type>(obj);
+        return true;
+    }
+    return root_node->insert(obj, root_node);
+}
+
+// Insert element (iterative)
+template <typename Type>
+void Binary_Search_tree<Type>::insertiter(Type const& obj) {
+    Binary_search_node<Type>* newNode = new Binary_search_node<Type>(obj);
+    
+    if (!root_node) {
+        root_node = newNode;
+        return;
+    }
+    
+    Binary_search_node<Type>* current = root_node;
+    Binary_search_node<Type>* parent = nullptr;
+    
+    while (current != nullptr) {
+        parent = current;
+        if (obj < current->retrieve()) {
+            current = current->left();
+        }
+        else if (obj > current->retrieve()) {
+            current = current->right();
+        }
+        else {
+            // Duplicate value
+            delete newNode;
+            return;
+        }
+    }
+    
+    if (obj < parent->retrieve()) {
+        parent->setleft(newNode);
+    }
+    else {
+        parent->setright(newNode);
+    }
+}
+
+// Erase element
+template <typename Type>
+bool Binary_Search_tree<Type>::erase(Type const& obj) {
+    if (!root_node) return false;
+    return root_node->erase(obj, root_node);
+}
+
+// ===================== TRAVERSAL IMPLEMENTATION =====================
+
+// Inorder traversal helper
+template <typename Type>
+void Binary_Search_tree<Type>::inorder_helper(Binary_search_node<Type>* node) const {
+    if (node != nullptr) {
+        inorder_helper(node->left());
+        cout << node->retrieve() << " ";
+        inorder_helper(node->right());
+    }
+}
+
+// Preorder traversal helper
+template <typename Type>
+void Binary_Search_tree<Type>::preorder_helper(Binary_search_node<Type>* node) const {
+    if (node != nullptr) {
+        cout << node->retrieve() << " ";
+        preorder_helper(node->left());
+        preorder_helper(node->right());
+    }
+}
+
+// Postorder traversal helper
+template <typename Type>
+void Binary_Search_tree<Type>::postorder_helper(Binary_search_node<Type>* node) const {
+    if (node != nullptr) {
+        postorder_helper(node->left());
+        postorder_helper(node->right());
+        cout << node->retrieve() << " ";
+    }
+}
+
+// Public traversal methods
+template <typename Type>
+void Binary_Search_tree<Type>::inorder() const {
+    cout << "Inorder: ";
+    inorder_helper(root_node);
+    cout << endl;
+}
+
+template <typename Type>
+void Binary_Search_tree<Type>::preorder() const {
+    cout << "Preorder: ";
+    preorder_helper(root_node);
+    cout << endl;
+}
+
+template <typename Type>
+void Binary_Search_tree<Type>::postorder() const {
+    cout << "Postorder: ";
+    postorder_helper(root_node);
+    cout << endl;
+}
+
+// ===================== TEST PROGRAM =====================
+
+int main() {
+    // Test the Binary Search Tree
+    Binary_Search_tree<int> bst;
+    
+    // Insert elements
+    cout << "Inserting elements: 50, 30, 70, 20, 40, 60, 80" << endl;
+    bst.insert(50);
+    bst.insert(30);
+    bst.insert(70);
+    bst.insert(20);
+    bst.insert(40);
+    bst.insert(60);
+    bst.insert(80);
+    
+    // Test traversals
+    bst.inorder();
+    bst.preorder();
+    bst.postorder();
+    
+    // Test size and height
+    cout << "Size: " << bst.size() << endl;
+    cout << "Height: " << bst.height() << endl;
+    
+    // Test front and back
+    cout << "Minimum: " << bst.front() << endl;
+    cout << "Maximum: " << bst.back() << endl;
+    
+    // Test find
+    cout << "Find 40: " << (bst.find(40) ? "Found" : "Not found") << endl;
+    cout << "Find 90: " << (bst.find(90) ? "Found" : "Not found") << endl;
+    
+    // Test erase
+    cout << "\nErasing 20 (leaf): " << (bst.erase(20) ? "Success" : "Failed") << endl;
+    bst.inorder();
+    
+    cout << "Erasing 30 (one child): " << (bst.erase(30) ? "Success" : "Failed") << endl;
+    bst.inorder();
+    
+    cout << "Erasing 50 (two children): " << (bst.erase(50) ? "Success" : "Failed") << endl;
+    bst.inorder();
+    
+    // Clear tree
+    cout << "\nClearing tree..." << endl;
+    bst.clear();
+    cout << "Tree empty: " << (bst.empty() ? "Yes" : "No") << endl;
+    
+    return 0;
+}
